@@ -134,5 +134,3 @@ The final design reflects a **production-grade IAM model**, not a simplified tut
 
 These decisions mirror patterns used in mature multi-account environments built on **:contentReference[oaicite:0]{index=0} Organizations**.
 
-The trust policy was tightened to trust only:
-
