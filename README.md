@@ -40,6 +40,7 @@ The initial trust policy for the Development `SecurityAuditRole` trusted the ent
 
 **Decision taken**  
 
+- The trust policy was tightened to trust only: arn:aws:iam::<AUDIT_ACCOUNT_ID>:role/AuditSecurityOperatorRole
 
 **Outcome**  
 - Reduced blast radius
