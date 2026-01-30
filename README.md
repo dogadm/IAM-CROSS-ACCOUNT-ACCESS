@@ -1,8 +1,151 @@
 # IAM Cross-Account Access (AWS)
 
-This project demonstrates production-grade IAM cross-account access using AWS STS AssumeRole.
+This project demonstrates production-grade IAM cross-account access using AWS STS AssumeRole in a multi-account AWS Organization.
 
-Work in progress.
+---
+
+## Architecture Overview
+
+This design uses the **Audit account as a central security hub**.  
+All human and security access flows from Audit into workload accounts using scoped IAM roles.
+
+High-level flow:
+- Management → Audit (human access, MFA enforced)
+- Audit → Workload accounts (role-based, short-lived access)
+
+---
+
+## Organizational Structure
+
+- **Security OU**
+  - Audit
+  - Log Archive
+- **Startup OU**
+  - Development
+  - UAT
+  - Prod2
+  - Gaming / AI
+
+---
+
+## IAM Role Matrix
+
+This project uses the **Audit account as the central security hub**.  
+All human and security access flows **from Audit → into workload accounts** via tightly scoped IAM roles.
+
+The design is aligned to AWS Organizations best practices and scales cleanly across multiple OUs and environments.
+
+---
+
+## Organizational Structure
+
+- **Security OU**
+  - Audit
+  - Log Archive
+- **Startup OU**
+  - Development
+  - UAT
+  - Prod2
+  - Gaming / AI
+
+---
+
+## Security OU – Roles
+
+### Audit Account (Central Security Hub)
+
+| Role Name | Purpose | Permissions | Trust |
+|---------|--------|------------|-------|
+| **AuditSecurityOperatorRole** | Primary human-operated security role | IAM, CloudTrail, GuardDuty, Security Hub, cross-account AssumeRole | Management account (MFA enforced) |
+| **IncidentResponseCoordinatorRole** | Coordinate incidents across accounts | `sts:AssumeRole` into workload IR roles | Audit account only |
+| **SecurityAuditRole** *(optional)* | Self-audit of Audit account | `SecurityAudit`, `ViewOnlyAccess` | Audit account only |
+
+**Notes**
+- No IAM users exist in workload accounts
+- Audit is the **only source of human access**
+- `OrganizationAccountAccessRole` is used only for bootstrap / break-glass
+
+---
+
+### Log Archive Account
+
+| Role Name | Purpose | Permissions | Trust |
+|---------|--------|------------|-------|
+| **LogArchiveAccessRole** | Read/query centralised logs | S3 read, Athena, Glue | Audit account only |
+| **LogArchiveIngestRole** | Allow workloads to write logs | S3 write-only | Workload accounts |
+
+**Notes**
+- Humans never log directly into Log Archive
+- Clear separation between log **writers** and **readers**
+
+---
+
+## Startup OU – Standard Workload Roles  
+*(Applied consistently to Development, UAT, Prod2, Gaming/AI)*
+
+### Core Roles (present in every workload account)
+
+| Role Name | Purpose | Permissions | Trust |
+|---------|--------|------------|-------|
+| **SecurityAuditRole** | Read-only security review | `SecurityAudit`, `ViewOnlyAccess` | AuditSecurityOperatorRole |
+| **IncidentResponseRole** | Active incident handling | EC2, VPC, IAM read + tightly scoped write | AuditSecurityOperatorRole |
+| **DeploymentRole** | CI/CD deployments | Scoped service permissions (ECS, Lambda, S3, etc.) | CI/CD pipeline role |
+
+---
+
+## Environment-Specific Permission Tightening
+
+The **same role names** are used across environments, but permissions are progressively restricted.
+
+### Development
+- IncidentResponseRole:
+  - Can stop/start instances
+  - Can modify security groups
+- DeploymentRole:
+  - Broader service access for iteration
+
+### UAT
+- IncidentResponseRole:
+  - Limited rollback-only actions
+- DeploymentRole:
+  - Pipeline-driven only
+
+### Prod2
+- IncidentResponseRole:
+  - Break-glass style
+  - No IAM writes
+  - No destructive actions
+- DeploymentRole:
+  - CI/CD only
+  - No console usage
+
+This approach preserves **consistency**, **automation**, and **defence in depth**.
+
+---
+
+## Trust Model (Single Principle)
+
+> **All human access originates from the Audit account.  
+> Workload accounts expose narrowly scoped roles that trust only approved Audit or CI/CD identities.**
+
+---
+
+## Why This Model
+
+- Eliminates IAM user sprawl
+- Reduces blast radius
+- Enables organisation-wide automation (Terraform / StackSets)
+- Mirrors real enterprise AWS security operating models
+- Makes access patterns easy to reason about and audit
+
+This role matrix is the foundation for:
+- Project 2: SCP Guardrails
+- Project 3: Centralised Logging & Detection
+
+
+---
+
+The project focuses on secure access patterns, operational realism, and scalability rather than simplified lab configurations.
 
 
 ## Design Decisions, Pitfalls Encountered, and Lessons Learned
@@ -132,5 +275,6 @@ The final design reflects a **production-grade IAM model**, not a simplified tut
 - Trust relationships are tightly scoped
 - AWS STS limitations are understood and accounted for
 
-These decisions mirror patterns used in mature multi-account environments built on **:contentReference[oaicite:0]{index=0} Organizations**.
+These decisions mirror patterns used in mature multi-account environments built on AWS Organizations.
+
 
