@@ -15,19 +15,6 @@ High-level flow:
 
 ---
 
-## Organizational Structure
-
-- **Security OU**
-  - Audit
-  - Log Archive
-- **Startup OU**
-  - Development
-  - UAT
-  - Prod2
-  - Gaming / AI
-
----
-
 ## IAM Role Matrix
 
 This project uses the **Audit account as the central security hub**.  
