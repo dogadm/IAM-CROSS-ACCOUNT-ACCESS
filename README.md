@@ -9,6 +9,8 @@ This project demonstrates production-grade IAM cross-account access using AWS ST
 This design uses the **Audit account as a central security hub**.  
 All human and security access flows from Audit into workload accounts using scoped IAM roles.
 
+![Architecture Diagram](diagrams/Architecture-diagram-2.png)
+
 High-level flow:
 - Management → Audit (human access, MFA enforced)
 - Audit → Workload accounts (role-based, short-lived access)
