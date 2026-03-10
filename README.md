@@ -422,6 +422,35 @@ This project deliberately avoids creating additional IAM users in member account
 
 ---
 
+---
+## How Would This Scale ?
+
+```
+                        ┌─────────────────┐
+                        │  SECURITY HUB   │
+                        │    ACCOUNT      │
+                        └────────┬────────┘
+                                 │
+           ┌─────────────────────┼─────────────────────┐
+           │                     │                     │
+           ▼                     ▼                     ▼
+    ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+    │ Startup OU   │     │  Further OU  │     │  Sandbox OU  │
+    ├──────────────┤     ├──────────────┤     ├──────────────┤
+    │ ┌──────────┐ │     │ ┌──────────┐ │     │ ┌──────────┐ │
+    │ │Account 1 │ │     │ │Account 10│ │     │ │Account 50│ │
+    │ └──────────┘ │     │ └──────────┘ │     │ └──────────┘ │
+    │ ┌──────────┐ │     │ ┌──────────┐ │     │ ┌──────────┐ │
+    │ │Account 2 │ │     │ │Account 11│ │     │ │Account 51│ │
+    │ └──────────┘ │     │ └──────────┘ │     │ └──────────┘ │
+    │     ...      │     │     ...      │     │     ...      │
+    └──────────────┘     └──────────────┘     └──────────────┘
+
+    At scale: Use AWS Organizations with SCPs + StackSets
+    to deploy consistent roles across all accounts
+```
+---
+
 ## Summary
 
 The final design reflects a **production-grade IAM model**, not a simplified tutorial:
