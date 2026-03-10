@@ -131,19 +131,6 @@ Audit to member accounts
 ### Audit Account (Central Security Hub)
 
 | Role Name | Purpose | Permissions | Trust |
-|---|---|---|---|
-| AuditSecurityOperatorRole | Primary human-operated security role | IAM, CloudTrail, GuardDuty, Security Hub, cross-account AssumeRole | Management account (MFA enforced) |
-| IncidentResponseCoordinatorRole | Coordinate incidents across accounts | sts:AssumeRole into workload IR roles | Audit account only |
-| SecurityAuditRole (optional) | Self-audit of Audit account | SecurityAudit, ViewOnlyAccess | Audit account only |
-
-**Notes**
-- No IAM users exist in workload accounts
-- Audit is the only source of human access
-- OrganizationAccountAccessRole is used only for bootstrap / break-glass
-
-### Audit Account (Central Security Hub)
-
-| Role Name | Purpose | Permissions | Trust |
 |---------|--------|------------|-------|
 | **AuditSecurityOperatorRole** | Primary human-operated security role | IAM, CloudTrail, GuardDuty, Security Hub, cross-account AssumeRole | Management account (MFA enforced) |
 | **IncidentResponseCoordinatorRole** | Coordinate incidents across accounts | `sts:AssumeRole` into workload IR roles | Audit account only |
@@ -179,6 +166,10 @@ Audit to member accounts
 | **SecurityAuditRole** | Read-only security review | `SecurityAudit`, `ViewOnlyAccess` | AuditSecurityOperatorRole |
 | **IncidentResponseRole** | Active incident handling | EC2, VPC, IAM read + tightly scoped write | AuditSecurityOperatorRole |
 | **DeploymentRole** | CI/CD deployments | Scoped service permissions (ECS, Lambda, S3, etc.) | CI/CD pipeline role |
+
+### Console vs CLI access (intentional split)
+- **SecurityAuditRole** is used for CLI/Terraform access and enforces `sts:ExternalId`.
+- **SecurityAuditConsoleRole** is used for AWS Console "Switch Role" access (console cannot supply ExternalId).
 
 ---
 
