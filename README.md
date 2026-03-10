@@ -38,7 +38,91 @@ The design is aligned to AWS Organizations best practices and scales cleanly acr
   - Gaming / AI
 
 ---
-##The Role Assumption Flow
+## The Role Assumption Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                   AWS ORGANIZATIONS ROLE ASSUMPTION FLOW                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+     MANAGEMENT ACCOUNT                            AUDIT ACCOUNT
+     ══════════════════                            ═════════════
+
+  ┌──────────────────────┐                    ┌──────────────────────────┐
+  │ 1. Admin/User in     │                    │                          │
+  │    Management acct   │                    │                          │
+  │    has permission to │                    │                          │
+  │    assume bootstrap  │                    │                          │
+  │    role              │                    │                          │
+  └──────────┬───────────┘                    │                          │
+             │                                │                          │
+             ▼                                │                          │
+  ┌──────────────────────┐                    │ 2. Assume               │
+  │ OrganizationAccount  │───────────────────▶│    OrganizationAccount  │
+  │ AccessRole used for  │                    │    AccessRole in Audit  │
+  │ initial bootstrap    │                    │                          │
+  └──────────┬───────────┘                    │  ┌────────────────────┐  │
+             │                                │  │ Trusts management  │  │
+             │                                │  │ account by default │  │
+             │                                │  └────────────────────┘  │
+             ▼                                │                          │
+  ┌──────────────────────┐                    │                          │
+  │ 3. Create dedicated  │                    │                          │
+  │    AuditSecurity     │                    │                          │
+  │    OperatorRole      │                    │                          │
+  │    in Audit account  │                    │                          │
+  └──────────┬───────────┘                    └──────────────────────────┘
+             │
+             ▼
+  ┌──────────────────────┐
+  │ 4. Ongoing access    │
+  │    uses dedicated    │
+  │    AuditSecurity     │
+  │    OperatorRole      │
+  │    not bootstrap role│
+  └──────────────────────┘
+
+```
+Audit to member accounts
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 OPERATIONAL CROSS-ACCOUNT ACCESS FLOW                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+        AUDIT ACCOUNT                              MEMBER ACCOUNT
+        ═════════════                              ══════════════
+
+  ┌──────────────────────┐                    ┌──────────────────────────┐
+  │ 1. Security operator │                    │                          │
+  │    signs into Audit  │                    │                          │
+  │    account and uses  │                    │                          │
+  │    AuditSecurity     │                    │                          │
+  │    OperatorRole      │                    │                          │
+  └──────────┬───────────┘                    │                          │
+             │                                │                          │
+             ▼                                │                          │
+  ┌──────────────────────┐                    │ 2. STS AssumeRole       │
+  │  Calls STS           │───────────────────▶│    into workload role   │
+  │  AssumeRole for      │                    │    e.g. SecurityAudit   │
+  │  target account role │                    │    Role / DevAccessRole │
+  │                      │                    │                          │
+  └──────────┬───────────┘                    │  ┌────────────────────┐  │
+             │                                │  │ Trust policy checks│  │
+             │                                │  │ ✓ Audit acct       │  │
+             │                                │  │ ✓ Named role       │  │
+             │                                │  │ ✓ Conditions       │  │
+             │                                │  └────────────────────┘  │
+             │◀───────────────────────────────│                          │
+             │                                │ 3. Temporary creds      │
+             ▼                                │    returned             │
+  ┌──────────────────────┐                    └──────────────────────────┘
+  │ 4. Perform approved  │
+  │    actions in target │
+  │    account based on  │
+  │    least privilege   │
+  └──────────────────────┘
+```
 
 ---
 
