@@ -38,6 +38,9 @@ The design is aligned to AWS Organizations best practices and scales cleanly acr
   - Gaming / AI
 
 ---
+##The Role Assumption Flow
+
+---
 
 ## Security OU – Roles
 
