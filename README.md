@@ -131,6 +131,19 @@ Audit to member accounts
 ### Audit Account (Central Security Hub)
 
 | Role Name | Purpose | Permissions | Trust |
+|---|---|---|---|
+| AuditSecurityOperatorRole | Primary human-operated security role | IAM, CloudTrail, GuardDuty, Security Hub, cross-account AssumeRole | Management account (MFA enforced) |
+| IncidentResponseCoordinatorRole | Coordinate incidents across accounts | sts:AssumeRole into workload IR roles | Audit account only |
+| SecurityAuditRole (optional) | Self-audit of Audit account | SecurityAudit, ViewOnlyAccess | Audit account only |
+
+**Notes**
+- No IAM users exist in workload accounts
+- Audit is the only source of human access
+- OrganizationAccountAccessRole is used only for bootstrap / break-glass
+
+### Audit Account (Central Security Hub)
+
+| Role Name | Purpose | Permissions | Trust |
 |---------|--------|------------|-------|
 | **AuditSecurityOperatorRole** | Primary human-operated security role | IAM, CloudTrail, GuardDuty, Security Hub, cross-account AssumeRole | Management account (MFA enforced) |
 | **IncidentResponseCoordinatorRole** | Coordinate incidents across accounts | `sts:AssumeRole` into workload IR roles | Audit account only |
