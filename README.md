@@ -450,6 +450,45 @@ This project deliberately avoids creating additional IAM users in member account
     to deploy consistent roles across all accounts
 ```
 ---
+## Security Considerations
+
+### Risks of Over-Privileged Roles
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    BLAST RADIUS COMPARISON                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Over-Privileged Role              Properly Scoped Role         │
+│  ════════════════════              ════════════════════         │
+│                                                                 │
+│  Compromised? Attacker can:        Compromised? Attacker can:   │
+│  • Delete all resources            • Read EC2 metadata          │
+│  • Exfiltrate all data             • View security groups       │
+│  • Create backdoor users           • That's it.                 │
+│  • Pivot to other accounts                                      │
+│  • Disable logging                 Impact: LOW                  │
+│  • Mine crypto                     Recovery: EASY               │
+│                                                                 │
+│  Impact: CATASTROPHIC                                           │
+│  Recovery: DIFFICULT                                            │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Detection: What to Monitor
+
+```
+CloudTrail Events to Alert On:
+─────────────────────────────
+• AssumeRole from unexpected source IPs
+• AssumeRole failures (brute force attempts)
+• Role assumption outside business hours
+• Cross-account access from unapproved accounts
+• Changes to trust policies
+```
+
+---
 
 ## Summary
 
