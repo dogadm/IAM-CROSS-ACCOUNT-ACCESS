@@ -13,7 +13,7 @@ High-level flow:
 - Management → Audit (human access, MFA enforced)
 - Audit → Workload accounts (role-based, short-lived access)
 
-![Architecture Diagram](diagrams/Architecture diagram 1.png)
+![Architecture Diagram](diagrams/Architecture-diagram-1.png)
 
 ---
 
