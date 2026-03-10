@@ -199,6 +199,86 @@ This approach preserves **consistency**, **automation**, and **defence in depth*
 
 ---
 
+---
+## Implementation Steps
+### Step 1: Set Up the Trust Relationship
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     TRUST POLICY ANATOMY                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  {                                                              │
+│    "Version": "2012-10-17",                                     │
+│    "Statement": [                                               │
+│      {                                                          │
+│        "Effect": "Allow",          ◄── Explicit allow           │
+│        "Principal": {                                           │
+│          "AWS": "arn:aws:iam::111111111111:root"               │
+│        },                          ◄── WHO can assume           │
+│        "Action": "sts:AssumeRole", ◄── The action               │
+│        "Condition": {                                           │
+│          "StringEquals": {                                      │
+│            "sts:ExternalId": "UniqueSecretValue"               │
+│          },                        ◄── Confused deputy fix      │
+│          "Bool": {                                              │
+│            "aws:MultiFactorAuthPresent": "true"                │
+│          }                         ◄── MFA required             │
+│        }                                                        │
+│      }                                                          │
+│    ]                                                            │
+│  }                                                              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+### Step 2: Create the Permission Policy
+Apply least privilege by scoping to exactly what's needed:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    LEAST PRIVILEGE APPROACH                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  BAD (Overprivileged):              GOOD (Least Privilege):     │
+│  ─────────────────────              ────────────────────────    │
+│                                                                 │
+│  {                                  {                           │
+│    "Effect": "Allow",                 "Effect": "Allow",        │
+│    "Action": "ec2:*",     ✗           "Action": [               │
+│    "Resource": "*"                      "ec2:DescribeInstances",│
+│  }                                      "ec2:DescribeVpcs",     │
+│                                         "ec2:DescribeSubnets"   │
+│                                       ],                   ✓    │
+│                                       "Resource": "*"           │
+│                                     }                           │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+### Step 3: Configure the Assuming Role
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              PERMISSION TO ASSUME (Security Account)            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  {                                                              │
+│    "Version": "2012-10-17",                                     │
+│    "Statement": [                                               │
+│      {                                                          │
+│        "Effect": "Allow",                                       │
+│        "Action": "sts:AssumeRole",                              │
+│        "Resource": [                                            │
+│          "arn:aws:iam::222222222222:role/SecurityAuditRole",   │
+│          "arn:aws:iam::333333333333:role/LogArchiveRole"       │
+│        ]                                                        │
+│      }                           ▲                              │
+│    ]                             │                              │
+│  }                               │                              │
+│                                  │                              │
+│         Explicitly list allowed roles ─┘                        │
+│         Never use wildcards here!                               │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+---
+
 ## Trust Model (Single Principle)
 
 > **All human access originates from the Audit account.  
