@@ -1,3 +1,10 @@
+![AWS](https://img.shields.io/badge/AWS-IAM-red)
+![Terraform](https://img.shields.io/badge/IaC-Terraform-623CE4)
+![Security](https://img.shields.io/badge/Focus-Cloud%20Security-blue)
+![Status](https://img.shields.io/badge/Project-Portfolio%20Ready-success)
+
+
+
 # IAM Cross-Account Access (AWS)
 
 This project demonstrates production-grade IAM cross-account access using AWS STS AssumeRole in a multi-account AWS Organization.
