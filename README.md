@@ -11,6 +11,21 @@ This project demonstrates production-grade IAM cross-account access using AWS ST
 
 ---
 
+## Implementation Status
+
+| Component | Status |
+|---|---|
+| Multi-account IAM trust model | ✅ Implemented |
+| Workload `SecurityAuditRole` Terraform module | ✅ Implemented |
+| Startup/workload account Terraform | ✅ Implemented |
+| Audit security operator role | ✅ Implemented / bootstrapped |
+| Audit account full Terraform automation | 🚧 Planned |
+| Cross-account STS validation | ✅ Implemented |
+| IAM Identity Center integration | 📋 Architecture recommendation |
+| Centralised detection / alerting | 📋 Planned |
+
+---
+
 ## Architecture Overview
 
 This design uses the **Audit account as a central security hub**.  
@@ -30,6 +45,35 @@ This project uses the **Audit account as the central security hub**.
 All human and security access flows **from Audit → into workload accounts** via tightly scoped IAM roles.
 
 The design is aligned to AWS Organizations best practices and scales cleanly across multiple OUs and environments.
+
+---
+
+## Trust Model (Single Principle)
+
+### Workforce Identity
+
+This project focuses on the cross-account IAM role model itself.
+
+In a production enterprise environment, human authentication would normally
+originate from a federated workforce identity platform such as
+**AWS IAM Identity Center**, rather than long-lived IAM users.
+
+A typical production path would be:
+
+```text
+Corporate Identity Provider
+        ↓
+AWS IAM Identity Center
+        ↓
+Audit Account Permission Set
+        ↓
+AuditSecurityOperatorRole
+        ↓
+STS AssumeRole
+        ↓
+Workload Account Roles
+```
+The cross-account role architecture demonstrated in this project remains applicable behind that federated workforce-access layer.
 
 ---
 
@@ -229,8 +273,8 @@ This approach preserves **consistency**, **automation**, and **defence in depth*
 │        "Action": "sts:AssumeRole", ◄── The action               │
 │        "Condition": {                                           │
 │          "StringEquals": {                                      │
-│            "sts:ExternalId": "UniqueSecretValue"               │
-│          },                        ◄── Confused deputy fix      │
+│            "sts:ExternalId": "example-unique-external-id"       │
+│          },                        ◄── Additional AssumeRole condition    │
 │          "Bool": {                                              │
 │            "aws:MultiFactorAuthPresent": "true"                │
 │          }                         ◄── MFA required             │
@@ -361,19 +405,42 @@ The initial trust policy for the Development `SecurityAuditRole` trusted the ent
 
 ### 3. ExternalId Usage and Selection
 
-**What happened**  
-An ExternalId was required to mitigate the confused deputy problem, but choosing an appropriate value was non-obvious.
+**What happened**
 
-**Decision taken**  
-- Generated a UUID-style ExternalId
-- Used the same ExternalId in:
-  - The Development role trust policy
-  - The STS AssumeRole call
-- Treated it as a shared secret between trusted roles
+An `ExternalId` condition was included in the CLI/Terraform cross-account
+`SecurityAuditRole` trust relationship as an additional AssumeRole condition.
 
-**Outcome**  
-- Confused deputy risk mitigated
-- Clear documentation of why and how ExternalId is used
+**Security context**
+
+AWS primarily recommends `ExternalId` for third-party or multi-tenant
+cross-account access where the confused-deputy problem may occur.
+
+An `ExternalId` is **not a secret**. It can be visible to principals that are
+allowed to inspect the IAM role.
+
+Because the accounts in this project are controlled within the same AWS
+Organization, the primary trust controls are:
+
+- explicit trust in the named `AuditSecurityOperatorRole`;
+- least-privilege `sts:AssumeRole` permissions;
+- short-lived STS credentials;
+- restricted role session duration;
+- CloudTrail auditability.
+
+**Decision taken**
+
+- Retained the UUID-style `ExternalId` as an additional trust condition for
+  CLI/Terraform role assumption.
+- Did not treat the value as a credential or secret.
+- Kept explicit role-to-role trust as the primary authorization boundary.
+- Used a separate console role because AWS Console Switch Role cannot supply
+  an `ExternalId`.
+
+**Outcome**
+
+The design demonstrates how `ExternalId` can be used as an additional
+AssumeRole condition while correctly distinguishing it from the primary
+role-to-role trust controls.
 
 ---
 
@@ -387,12 +454,13 @@ AWS does **not reliably propagate MFA context across chained role assumptions** 
 The second role sees the caller as a role session, not a human-authenticated MFA session.
 
 **Decision taken**  
-- MFA enforcement retained on the **human access boundary** (Management → Audit)
-- MFA condition removed from the **role-to-role trust** (Audit → Development)
-- Relied on:
-  - Explicit role trust
-  - ExternalId
-  - Short-lived credentials
+- MFA enforcement is retained at the human authentication boundary.
+- MFA is not relied upon as a transitive condition across chained role sessions.
+- The Audit → workload trust relationship instead relies on:
+  - explicit trust in the named Audit role;
+  - least-privilege `sts:AssumeRole` permission;
+  - short-lived STS credentials;
+  - the configured `ExternalId` as an additional condition where used.
 
 **Outcome**  
 - Reliable chained role assumption
