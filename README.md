@@ -569,4 +569,13 @@ The final design reflects a **production-grade IAM model**, not a simplified tut
 
 These decisions mirror patterns used in mature multi-account environments built on AWS Organizations.
 
+---
+
+## Validation Evidence
+
+The cross-account trust model is validated through positive and negative
+authorization tests.
+
+[View cross-account IAM validation evidence](docs/evidence/iam-cross-account/)
+
 
