@@ -48,35 +48,6 @@ The design is aligned to AWS Organizations best practices and scales cleanly acr
 
 ---
 
-## Trust Model (Single Principle)
-
-### Workforce Identity
-
-This project focuses on the cross-account IAM role model itself.
-
-In a production enterprise environment, human authentication would normally
-originate from a federated workforce identity platform such as
-**AWS IAM Identity Center**, rather than long-lived IAM users.
-
-A typical production path would be:
-
-```text
-Corporate Identity Provider
-        ↓
-AWS IAM Identity Center
-        ↓
-Audit Account Permission Set
-        ↓
-AuditSecurityOperatorRole
-        ↓
-STS AssumeRole
-        ↓
-Workload Account Roles
-```
-The cross-account role architecture demonstrated in this project remains applicable behind that federated workforce-access layer.
-
----
-
 ## Organizational Structure
 
 - **Security OU**
@@ -253,8 +224,6 @@ The **same role names** are used across environments, but permissions are progre
 This approach preserves **consistency**, **automation**, and **defence in depth**.
 
 ---
-
----
 ## Implementation Steps
 ### Step 1: Set Up the Trust Relationship
 ```
@@ -336,8 +305,30 @@ Apply least privilege by scoping to exactly what's needed:
 
 ## Trust Model (Single Principle)
 
-> **All human access originates from the Audit account.  
-> Workload accounts expose narrowly scoped roles that trust only approved Audit or CI/CD identities.**
+### Workforce Identity
+
+This project focuses on the cross-account IAM role model itself.
+
+In a production enterprise environment, human authentication would normally
+originate from a federated workforce identity platform such as
+**AWS IAM Identity Center**, rather than long-lived IAM users.
+
+A typical production path would be:
+
+```text
+Corporate Identity Provider
+        ↓
+AWS IAM Identity Center
+        ↓
+Audit Account Permission Set
+        ↓
+AuditSecurityOperatorRole
+        ↓
+STS AssumeRole
+        ↓
+Workload Account Roles
+```
+The cross-account role architecture demonstrated in this project remains applicable behind that federated workforce-access layer.
 
 ---
 
@@ -498,8 +489,6 @@ Some IAM roles had to be created manually before automation could be applied.
 - Easier revocation and blast-radius control
 
 This project deliberately avoids creating additional IAM users in member accounts.
-
----
 
 ---
 ## How Would This Scale ?
